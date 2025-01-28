@@ -9,10 +9,18 @@ const CalendarComponent = () => {
   const year = selectedDate.getFullYear();
   const month = selectedDate.getMonth();
 
+  // Function to format date as yyyy-MM-dd
+  const formatDate = (date) => {
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, "0");
+    const day = date.getDate().toString().padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
   // Fetch activities for the selected date
   useEffect(() => {
     const fetchActivities = async () => {
-      const date = selectedDate.toISOString().split("T")[0]; // YYYY-MM-DD
+      const date = formatDate(selectedDate); // Format the date
       try {
         const response = await axios.get(
           `http://localhost:8080/api/activities/${date}`
@@ -35,18 +43,17 @@ const CalendarComponent = () => {
 
   const handleAddActivity = async () => {
     if (newActivity.trim() !== "") {
-      const date = selectedDate.toISOString().split("T")[0]; // YYYY-MM-DD
+      const date = formatDate(selectedDate); // Format the date
       try {
-        await axios.post(
-          `http://localhost:8080/api/activities/${date}`,
-          newActivity,
-          {
-            headers: {
-              "Content-Type": "text/plain",
-            },
-          }
-        );
-        setActivities((prevActivities) => [...prevActivities, newActivity]);
+        const activity = {
+          date: date, // Send the date in yyyy-MM-dd format
+          description: newActivity,
+        };
+        await axios.post("http://localhost:8080/api/activities", activity);
+        setActivities((prevActivities) => [
+          ...prevActivities,
+          activity,
+        ]);
         setNewActivity("");
       } catch (error) {
         console.error("Error adding activity:", error);
@@ -106,11 +113,15 @@ const CalendarComponent = () => {
 
       {selectedDate && (
         <div className="activity-form">
-          <h4>Activities for {selectedDate.toLocaleDateString()}</h4>
+          <h4>Activities for {formatDate(selectedDate)}</h4>
           <ul>
-            {activities.map((activity, index) => (
-              <li key={index}>{activity}</li>
-            ))}
+            {activities.length > 0 ? (
+              activities.map((activity) => (
+                <li key={activity.id}>{activity.description}</li>
+              ))
+            ) : (
+              <li>No activities found</li>
+            )}
           </ul>
           <div>
             <input
